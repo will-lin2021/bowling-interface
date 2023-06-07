@@ -1,4 +1,8 @@
 # SECURITY REASONS
 .env
 
+# Remove binaries
 /target
+
+# Remove MacOS specific files
+.DS_Store
