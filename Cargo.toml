@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+	"bowling_base",
+	"bowling_cli",
+]

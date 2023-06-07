@@ -1,0 +1,4 @@
+# SECURITY REASONS
+.env
+
+/target

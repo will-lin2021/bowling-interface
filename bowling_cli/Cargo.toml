@@ -1,0 +1,11 @@
+[package]
+name = "bowling_cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bowling_base = { path = "../bowling_base"}
+chrono = "0.4.25"
+dotenv = "0.15.0"
