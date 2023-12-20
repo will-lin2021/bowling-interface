@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+	"bt-base",
+	"bt-cli",
+	"bt-util",
+]
+resolver = "2"

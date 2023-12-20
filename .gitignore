@@ -1,0 +1,9 @@
+// Security reasons
+.env
+
+// Macbook
+.DS_Store
+*/.DS_Store
+
+// Build targets
+/target
