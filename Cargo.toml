@@ -1,8 +1,17 @@
-[workspace]
+[package]
+name = "bowling-interface"
+version = "0.1.0"
+edition = "2021"
 
+
+[workspace]
 members = [
 	"bt-base",
-	"bt-cli",
 	"bt-util",
 ]
-resolver = "2"
+
+[dependencies]
+bt-base = { path = "./bt-base" }
+bt-util = { path = "./bt-util" }
+dotenv = "0.15.0"
+chrono = "0.4.31"

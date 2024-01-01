@@ -57,7 +57,18 @@ impl GameInfo {
     }
 }
 
-// `PartialEq` impl
+impl std::convert::From<NaiveDate> for GameInfo {
+    fn from(value: NaiveDate) -> Self {
+        Self::Partial(value)
+    }
+}
+
+impl std::convert::From<(NaiveDate, u8)> for GameInfo {
+    fn from(value: (NaiveDate, u8)) -> Self {
+        Self::Full(value.0, value.1)
+    }
+}
+
 impl std::cmp::PartialEq for GameInfo {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -71,110 +82,22 @@ impl std::cmp::PartialEq for GameInfo {
     }
 }
 
-// `PartialOrd` impl
 impl std::cmp::PartialOrd for GameInfo {
-    fn ge(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Partial(s_date), Self::Partial(o_date)) => s_date >= o_date,
-            (Self::Full(s_date, s_game), Self::Full(o_date, o_game)) => {
-                if s_date > o_date {
-                    true
-                } else if s_date == o_date {
-                    s_game >= o_game
-                } else {
-                    false
-                }
-            }
-            (Self::None, Self::None) => true,
-            _ => false,
-        }
-    }
-
-    fn gt(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Partial(s_date), Self::Partial(o_date)) => s_date > o_date,
-            (Self::Full(s_date, s_game), Self::Full(o_date, o_game)) => {
-                if s_date > o_date {
-                    true
-                } else if s_date == o_date {
-                    s_game > o_game
-                } else {
-                    false
-                }
-            }
-            (Self::None, Self::None) => false,
-            _ => false,
-        }
-    }
-
-    fn le(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Partial(s_date), Self::Partial(o_date)) => s_date <= o_date,
-            (Self::Full(s_date, s_game), Self::Full(o_date, o_game)) => {
-                if s_date < o_date {
-                    true
-                } else if s_date == o_date {
-                    s_game <= o_game
-                } else {
-                    false
-                }
-            }
-            (Self::None, Self::None) => true,
-            _ => false,
-        }
-    }
-
-    fn lt(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Partial(s_date), Self::Partial(o_date)) => s_date < o_date,
-            (Self::Full(s_date, s_game), Self::Full(o_date, o_game)) => {
-                if s_date < o_date {
-                    true
-                } else if s_date == o_date {
-                    s_game < o_game
-                } else {
-                    false
-                }
-            }
-            (Self::None, Self::None) => false,
-            _ => false,
-        }
-    }
-
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.date() < other.date() {
-            // Date is before
-            Some(Ordering::Less)
-        } else if self.date() > other.date() {
-            // Date is after
-            Some(Ordering::Greater)
-        } else if self.game() < other.game() {
-            // Date is same; Game No. is before
-            Some(Ordering::Less)
-        } else if self.game() > other.game() {
-            // Date is same; Game No. is after
-            Some(Ordering::Greater)
-        } else {
-            // Date is same; Game No. is same
-            Some(Ordering::Equal)
+        match (self, other) {
+            (Self::None, Self::None) => Some(Ordering::Equal),
+            (Self::Partial(s_date), Self::Partial(o_date)) => s_date.partial_cmp(o_date),
+            (Self::Full(s_date, s_game), Self::Full(o_date, o_game)) => {
+                match s_date.partial_cmp(o_date) {
+                    Some(Ordering::Equal) => s_game.partial_cmp(o_game),
+                    other => other,
+                }
+            }
+            _ => None,
         }
     }
 }
 
-// `From` impl
-impl std::convert::From<NaiveDate> for GameInfo {
-    fn from(value: NaiveDate) -> Self {
-        Self::Partial(value)
-    }
-}
-
-impl std::convert::From<(NaiveDate, u8)> for GameInfo {
-    fn from(value: (NaiveDate, u8)) -> Self {
-        Self::Full(value.0, value.1)
-    }
-}
-
-// `DBQuery` impl
 impl bt_util::database::DBQuery for GameInfo {
     fn query_statement(&self, table: &str, sort: bool) -> String {
         match self {
@@ -222,7 +145,6 @@ impl bt_util::database::DBQuery for GameInfo {
     }
 }
 
-// `DBDelete` impl
 impl bt_util::database::DBDelete for GameInfo {
     fn del_statement(&self, table: &str) -> String {
         format!("DELETE FROM {table} WHERE (date, game) = (:date, :game)")
@@ -243,8 +165,8 @@ impl bt_util::database::DBDelete for GameInfo {
 pub enum Frame {
     #[default]
     Uninit,
-    TwoFrame(u8, u8, u8),
-    ThreeFrame(u8, u8, u8, u8),
+    TwoFrame(u8, u8),
+    ThreeFrame(u8, u8, u8),
 }
 
 impl Frame {
@@ -258,53 +180,19 @@ impl Frame {
         self
     }
 
-    pub fn throw(&self, throw_num: usize) -> u8 {
-        match self {
-            Frame::TwoFrame(_, t1, t2) => match throw_num {
-                1 => *t1,
-                2 => *t2,
-                _ => panic!(),
-            },
-            Frame::ThreeFrame(_, t1, t2, t3) => match throw_num {
-                1 => *t1,
-                2 => *t2,
-                3 => *t3,
-                _ => panic!(),
-            },
-            _ => panic!(),
-        }
-    }
-
-    pub fn throw_opt(&self, throw_num: usize) -> Option<u8> {
-        match self {
-            Frame::TwoFrame(_, t1, t2) => match throw_num {
-                1 => Some(*t1),
-                2 => Some(*t2),
-                _ => None,
-            },
-            Frame::ThreeFrame(_, t1, t2, t3) => match throw_num {
-                1 => Some(*t1),
-                2 => Some(*t2),
-                3 => Some(*t3),
-                _ => None,
-            },
-            _ => None,
-        }
-    }
-
     pub fn frame_mut(&mut self) -> &mut Self {
         self
     }
 
-    // Type-specific
+    // Method
     pub fn is_valid(&self) -> bool {
         match self {
-            Self::TwoFrame(fr, ..) => (1..=10).contains(fr) && self.score() <= 10,
-            Self::ThreeFrame(fr, t1, t2, t3) => {
-                if self.score() > 30 || (*t1 > 10 || *t2 > 10 || *t3 > 10) {
-                    false
+            Self::TwoFrame(t1, t2) => *t1 <= 10 && *t2 <= 10 && *t1 + t2 <= 10,
+            Self::ThreeFrame(t1, t2, t3) => {
+                if *t1 == 10 || *t1 + t2 == 10 {
+                    *t1 <= 10 && *t2 <= 10 && *t3 <= 10 && *t1 + t2 + t3 <= 30
                 } else {
-                    (1..=10).contains(fr) && t1 + t2 >= 10
+                    false
                 }
             }
             Self::Uninit => false,
@@ -313,49 +201,52 @@ impl Frame {
 
     pub fn score(&self) -> u8 {
         match self {
-            Self::TwoFrame(_, t1, t2) => t1 + t2,
-            Self::ThreeFrame(_, t1, t2, t3) => t1 + t2 + t3,
+            Self::TwoFrame(t1, t2) => t1 + t2,
+            Self::ThreeFrame(t1, t2, t3) => t1 + t2 + t3,
             Self::Uninit => 0,
         }
     }
 
     pub fn is_strike(&self) -> bool {
-        matches!(self, Frame::TwoFrame(_, 10, 0)) || matches!(self, Frame::ThreeFrame(_, 10, ..))
+        matches!(self, Frame::TwoFrame(10, 0)) || matches!(self, Frame::ThreeFrame(10, ..))
     }
 
     pub fn is_spare(&self) -> bool {
-        matches!(self, Frame::TwoFrame(_, t1, t2) if (*t1 != 10) && t1 + t2 == 10)
-            || matches!(self, Frame::ThreeFrame(_, t1, t2, ..) if (*t1 != 10) && t1 + t2 == 10)
+        matches!(self, Frame::TwoFrame(t1, t2) if (*t1 != 10) && t1 + t2 == 10)
+            || matches!(self, Frame::ThreeFrame(t1, t2, ..) if (*t1 != 10) && t1 + t2 == 10)
     }
 }
 
-// `From` impl
+impl std::convert::From<(u8, u8)> for Frame {
+    fn from(value: (u8, u8)) -> Self {
+        Self::TwoFrame(value.0, value.1)
+    }
+}
+
 impl std::convert::From<(u8, u8, u8)> for Frame {
     fn from(value: (u8, u8, u8)) -> Self {
-        Self::TwoFrame(value.0, value.1, value.2)
+        Self::ThreeFrame(value.0, value.1, value.2)
     }
 }
 
-impl std::convert::From<(u8, u8, u8, u8)> for Frame {
-    fn from(value: (u8, u8, u8, u8)) -> Self {
-        Self::ThreeFrame(value.0, value.1, value.2, value.3)
-    }
-}
-
-// `PartialEq` impl
 impl std::cmp::PartialEq for Frame {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::TwoFrame(s_fr, s_t1, s_t2), Self::TwoFrame(o_fr, o_t1, o_t2)) => {
-                s_fr == o_fr && s_t1 == o_t1 && s_t2 == o_t2
+            (Self::TwoFrame(s_t1, s_t2), Self::TwoFrame(o_t1, o_t2)) => {
+                s_t1 == o_t1 && s_t2 == o_t2
             }
-            (
-                Self::ThreeFrame(s_fr, s_t1, s_t2, s_t3),
-                Self::ThreeFrame(o_fr, o_t1, o_t2, o_t3),
-            ) => s_fr == o_fr && s_t1 == o_t1 && s_t2 == o_t2 && s_t3 == o_t3,
+            (Self::ThreeFrame(s_t1, s_t2, s_t3), Self::ThreeFrame(o_t1, o_t2, o_t3)) => {
+                s_t1 == o_t1 && s_t2 == o_t2 && s_t3 == o_t3
+            }
             (Self::Uninit, Self::Uninit) => true,
             _ => false,
         }
+    }
+}
+
+impl std::cmp::PartialOrd for Frame {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.score().partial_cmp(&other.score())
     }
 }
 
@@ -368,7 +259,6 @@ pub struct Game {
     frames: Box<[Frame]>,
 }
 
-// Constructor
 impl Game {
     // Constructor
     pub fn build() -> Game {
@@ -447,6 +337,19 @@ impl Game {
         &self.frames
     }
 
+    pub fn frames_as_vec(&self) -> Vec<u8> {
+        let frames = self.frames();
+
+        frames
+            .iter()
+            .flat_map(|frame| match frame {
+                Frame::TwoFrame(t1, t2) => vec![*t1, *t2],
+                Frame::ThreeFrame(t1, t2, t3) => vec![*t1, *t2, *t3],
+                Frame::Uninit => vec![],
+            })
+            .collect()
+    }
+
     pub fn date_mut(&mut self) -> &mut NaiveDate {
         &mut self.date
     }
@@ -471,7 +374,7 @@ impl Game {
         &mut self.frames
     }
 
-    // Type-specific
+    // Method
     pub fn is_valid(&self) -> bool {
         if self.date() > &Local::now().date_naive() {
             return false;
@@ -513,7 +416,7 @@ impl Game {
                         if self.frame(frame_num + 1).is_strike() {
                             sum += 10
                                 + match self.frame(frame_num + 2) {
-                                    Frame::TwoFrame(_, t1, ..) | Frame::ThreeFrame(_, t1, ..) => {
+                                    Frame::TwoFrame(t1, ..) | Frame::ThreeFrame(t1, ..) => {
                                         *t1 as u16
                                     }
                                     _ => 0,
@@ -523,7 +426,7 @@ impl Game {
                         }
                     } else if frame.is_spare() {
                         sum += match self.frame(frame_num + 1) {
-                            Frame::TwoFrame(_, t1, ..) => *t1 as u16,
+                            Frame::TwoFrame(t1, ..) => *t1 as u16,
                             _ => 0,
                         }
                     }
@@ -531,14 +434,14 @@ impl Game {
                 9 => {
                     if frame.is_strike() {
                         sum += match self.frame(10) {
-                            Frame::TwoFrame(_, t1, t2) | Frame::ThreeFrame(_, t1, t2, ..) => {
+                            Frame::TwoFrame(t1, t2) | Frame::ThreeFrame(t1, t2, ..) => {
                                 (t1 + t2) as u16
                             }
                             _ => 0,
                         }
                     } else if frame.is_spare() {
                         sum += match self.frame(10) {
-                            Frame::TwoFrame(_, t1, ..) | Frame::ThreeFrame(_, t1, ..) => *t1 as u16,
+                            Frame::TwoFrame(t1, ..) | Frame::ThreeFrame(t1, ..) => *t1 as u16,
                             _ => 0,
                         }
                     }
@@ -565,7 +468,7 @@ impl
         u8, u8,
         u8, u8,
         u8, u8,
-        u8, u8,
+        u8, u8
     )> for Game
 {
     fn from(
@@ -579,7 +482,7 @@ impl
             u8, u8,
             u8, u8,
             u8, u8,
-            u8, u8,
+            u8, u8
         ),
     ) -> Self {
         let mut game = Game::build();
@@ -611,7 +514,7 @@ impl
         u8, u8,
         u8, u8,
         u8, u8,
-        u8, u8, u8,
+        u8, u8, u8
     )> for Game
 {
     fn from(
@@ -625,21 +528,21 @@ impl
             u8, u8,
             u8, u8,
             u8, u8,
-            u8, u8, u8,
+            u8, u8, u8
         ),
     ) -> Self {
         let mut game = Game::build();
 
-        *game.frame_mut(1) = Frame::from((1, value.0, value.1));
-        *game.frame_mut(2) = Frame::from((2, value.2, value.3));
-        *game.frame_mut(3) = Frame::from((3, value.4, value.5));
-        *game.frame_mut(4) = Frame::from((4, value.6, value.7));
-        *game.frame_mut(5) = Frame::from((5, value.8, value.9));
-        *game.frame_mut(6) = Frame::from((6, value.10, value.11));
-        *game.frame_mut(7) = Frame::from((7, value.12, value.13));
-        *game.frame_mut(8) = Frame::from((8, value.14, value.15));
-        *game.frame_mut(9) = Frame::from((9, value.16, value.17));
-        *game.frame_mut(10) = Frame::from((10, value.18, value.19, value.20));
+        *game.frame_mut(1) = Frame::from((value.0, value.1));
+        *game.frame_mut(2) = Frame::from((value.2, value.3));
+        *game.frame_mut(3) = Frame::from((value.4, value.5));
+        *game.frame_mut(4) = Frame::from((value.6, value.7));
+        *game.frame_mut(5) = Frame::from((value.8, value.9));
+        *game.frame_mut(6) = Frame::from((value.10, value.11));
+        *game.frame_mut(7) = Frame::from((value.12, value.13));
+        *game.frame_mut(8) = Frame::from((value.14, value.15));
+        *game.frame_mut(9) = Frame::from((value.16, value.17));
+        *game.frame_mut(10) = Frame::from((value.18, value.19, value.20));
 
         game
     }
@@ -669,11 +572,7 @@ impl mysql::prelude::FromRow for Game {
         for fr in 1..=9 {
             match (game.frame_mut(fr), row.get(2 * fr), row.get(2 * fr)) {
                 (frame, Some(throw1), Some(throw2)) => {
-                    *frame = Frame::TwoFrame(
-                        fr.try_into().unwrap(),
-                        u8::from_value(throw1),
-                        u8::from_value(throw2),
-                    );
+                    *frame = Frame::TwoFrame(u8::from_value(throw1), u8::from_value(throw2));
                 }
                 _ => panic!(),
             }
@@ -681,11 +580,10 @@ impl mysql::prelude::FromRow for Game {
 
         match (game.frame_mut(10), row.get(20), row.get(21), row.get(22)) {
             (frame, Some(throw1), Some(throw2), None) => {
-                *frame = Frame::TwoFrame(10, u8::from_value(throw1), u8::from_value(throw2));
+                *frame = Frame::TwoFrame(u8::from_value(throw1), u8::from_value(throw2));
             }
             (frame, Some(throw1), Some(throw2), Some(throw3)) => {
                 *frame = Frame::ThreeFrame(
-                    10,
                     u8::from_value(throw1),
                     u8::from_value(throw2),
                     u8::from_value(throw3),
@@ -712,11 +610,7 @@ impl mysql::prelude::FromRow for Game {
         for fr in 1..=9 {
             match (game.frame_mut(fr), row.get(2 * fr), row.get(2 * fr)) {
                 (frame, Some(throw1), Some(throw2)) => {
-                    *frame = Frame::TwoFrame(
-                        fr.try_into().unwrap(),
-                        u8::from_value(throw1),
-                        u8::from_value(throw2),
-                    );
+                    *frame = Frame::TwoFrame(u8::from_value(throw1), u8::from_value(throw2));
                 }
                 _ => return Err(FromRowError(row)),
             }
@@ -724,11 +618,10 @@ impl mysql::prelude::FromRow for Game {
 
         match (game.frame_mut(10), row.get(20), row.get(21), row.get(22)) {
             (frame, Some(throw1), Some(throw2), None) => {
-                *frame = Frame::TwoFrame(10, u8::from_value(throw1), u8::from_value(throw2));
+                *frame = Frame::TwoFrame(u8::from_value(throw1), u8::from_value(throw2));
             }
             (frame, Some(throw1), Some(throw2), Some(throw3)) => {
                 *frame = Frame::ThreeFrame(
-                    10,
                     u8::from_value(throw1),
                     u8::from_value(throw2),
                     u8::from_value(throw3),
@@ -773,30 +666,32 @@ impl bt_util::database::DBInsert for Game {
     }
 
     fn ins_parameter(&self) -> Params {
+        let frames = self.frames_as_vec();
+
         params! {
             "date" => self.date(),
             "game" => self.game(),
-            "f1t1" => self.frame(1).throw(1),
-            "f1t2" => self.frame(1).throw(2),
-            "f2t1" => self.frame(2).throw(1),
-            "f2t2" => self.frame(2).throw(2),
-            "f3t1" => self.frame(3).throw(1),
-            "f3t2" => self.frame(3).throw(2),
-            "f4t1" => self.frame(4).throw(1),
-            "f4t2" => self.frame(4).throw(2),
-            "f5t1" => self.frame(5).throw(1),
-            "f5t2" => self.frame(5).throw(2),
-            "f6t1" => self.frame(6).throw(1),
-            "f6t2" => self.frame(6).throw(2),
-            "f7t1" => self.frame(7).throw(1),
-            "f7t2" => self.frame(7).throw(2),
-            "f8t1" => self.frame(8).throw(1),
-            "f8t2" => self.frame(8).throw(2),
-            "f9t1" => self.frame(9).throw(1),
-            "f9t2" => self.frame(9).throw(2),
-            "f10t1" => self.frame(10).throw(1),
-            "f10t2" => self.frame(10).throw(2),
-            "f10t3" => self.frame(10).throw(3),
+            "f1t1" => frames[0],
+            "f1t2" => frames[1],
+            "f2t1" => frames[2],
+            "f2t2" => frames[3],
+            "f3t1" => frames[4],
+            "f3t2" => frames[5],
+            "f4t1" => frames[6],
+            "f4t2" => frames[7],
+            "f5t1" => frames[8],
+            "f5t2" => frames[9],
+            "f6t1" => frames[10],
+            "f6t2" => frames[11],
+            "f7t1" => frames[12],
+            "f7t2" => frames[13],
+            "f8t1" => frames[14],
+            "f8t2" => frames[15],
+            "f9t1" => frames[16],
+            "f9t2" => frames[17],
+            "f10t1" => frames[18],
+            "f10t2" => frames[19],
+            "f10t3" => frames[20],
         }
     }
 }
@@ -823,30 +718,32 @@ impl bt_util::database::DBModify for Game {
     }
 
     fn mod_parameter(&self) -> Params {
+        let frames = self.frames_as_vec();
+
         params! {
             "date" => self.date(),
             "game" => self.game(),
-            "f1t1" => self.frame(1).throw(1),
-            "f1t2" => self.frame(1).throw(2),
-            "f2t1" => self.frame(2).throw(1),
-            "f2t2" => self.frame(2).throw(2),
-            "f3t1" => self.frame(3).throw(1),
-            "f3t2" => self.frame(3).throw(2),
-            "f4t1" => self.frame(4).throw(1),
-            "f4t2" => self.frame(4).throw(2),
-            "f5t1" => self.frame(5).throw(1),
-            "f5t2" => self.frame(5).throw(2),
-            "f6t1" => self.frame(6).throw(1),
-            "f6t2" => self.frame(6).throw(2),
-            "f7t1" => self.frame(7).throw(1),
-            "f7t2" => self.frame(7).throw(2),
-            "f8t1" => self.frame(8).throw(1),
-            "f8t2" => self.frame(8).throw(2),
-            "f9t1" => self.frame(9).throw(1),
-            "f9t2" => self.frame(9).throw(2),
-            "f10t1" => self.frame(10).throw(1),
-            "f10t2" => self.frame(10).throw(2),
-            "f10t3" => self.frame(10).throw(3),
+            "f1t1" => frames[0],
+            "f1t2" => frames[1],
+            "f2t1" => frames[2],
+            "f2t2" => frames[3],
+            "f3t1" => frames[4],
+            "f3t2" => frames[5],
+            "f4t1" => frames[6],
+            "f4t2" => frames[7],
+            "f5t1" => frames[8],
+            "f5t2" => frames[9],
+            "f6t1" => frames[10],
+            "f6t2" => frames[11],
+            "f7t1" => frames[12],
+            "f7t2" => frames[13],
+            "f8t1" => frames[14],
+            "f8t2" => frames[15],
+            "f9t1" => frames[16],
+            "f9t2" => frames[17],
+            "f10t1" => frames[18],
+            "f10t2" => frames[19],
+            "f10t3" => frames[20],
         }
     }
 }

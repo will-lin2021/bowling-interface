@@ -182,6 +182,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bowling-interface"
+version = "0.1.0"
+dependencies = [
+ "bt-base",
+ "bt-util",
+ "chrono",
+ "dotenv",
+]
+
+[[package]]
 name = "bt-base"
 version = "0.1.0"
 dependencies = [
@@ -189,16 +199,6 @@ dependencies = [
  "chrono",
  "mysql",
  "mysql_common",
-]
-
-[[package]]
-name = "bt-cli"
-version = "0.1.0"
-dependencies = [
- "bt-base",
- "bt-util",
- "chrono",
- "dotenv",
 ]
 
 [[package]]

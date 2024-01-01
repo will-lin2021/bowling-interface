@@ -74,7 +74,7 @@ fn main() {
                 todo!("Help option")
             }
             cmd => {
-                eprint!("[!] Invalid Command: '{cmd}'\n");
+                eprintln!("[!] Invalid Command: '{cmd}'");
             }
         }
 
