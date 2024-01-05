@@ -360,7 +360,6 @@ dependencies = [
 name = "bt-base"
 version = "0.1.0"
 dependencies = [
- "bt-util",
  "chrono",
 ]
 
@@ -368,6 +367,7 @@ dependencies = [
 name = "bt-util"
 version = "0.1.0"
 dependencies = [
+ "bt-base",
  "chrono",
  "dotenv",
  "surrealdb",
