@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 dotenv = "0.15.0"
 chrono = "0.4.31"
-mysql = "24.0.0"
-mysql_common = { version = "0.30.6", default-features = true, features = ["chrono"] }
+surrealdb = "1.0.2"

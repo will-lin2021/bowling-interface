@@ -1,5 +1,4 @@
 use bt_base::types::{Frame, Game, GameInfo};
-use bt_util::database::DBConn;
 
 use std::collections::VecDeque;
 use std::env;
@@ -25,18 +24,6 @@ fn main() {
     println!("Bowling Score Tracker");
 
     dotenv().ok();
-
-    let mut conn: DBConn<Game> = match DBConn::connect(
-        env::var("DB_USER").ok(),
-        env::var("DB_PASS").ok(),
-        env::var("DB_IP").ok(),
-        env::var("DB_PORT").unwrap().parse().unwrap(),
-        env::var("DB_DB").ok(),
-        env::var("DB_TABLE").ok().unwrap(),
-    ) {
-        Ok(conn) => conn,
-        Err(err) => panic!("{err}"),
-    };
 
     let mut user_inputs: VecDeque<String>;
 

@@ -8,5 +8,3 @@ edition = "2021"
 [dependencies]
 bt-util = { path = "../bt-util" }
 chrono = "0.4.31"
-mysql = "24.0.0"
-mysql_common = { version = "0.30.6", default-features = true, features = ["chrono"] }
