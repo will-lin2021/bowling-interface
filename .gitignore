@@ -1,3 +1,6 @@
+// VSCode Configs
+/.vscode
+
 // Build targets
 /target
 
@@ -7,3 +10,7 @@
 
 // Macbook
 /.DS_Store
+
+// Others
+/misc
+/playground

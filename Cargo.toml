@@ -6,11 +6,9 @@ edition = "2021"
 [workspace]
 members = [
 	"bt-base",
-	"bt-util",
 ]
 
 [dependencies]
 bt-base = { path = "./bt-base" }
-bt-util = { path = "./bt-util" }
 dotenv = "0.15.0"
 chrono = "0.4.31"
