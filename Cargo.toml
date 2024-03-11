@@ -11,4 +11,3 @@ members = [
 [dependencies]
 bt-base = { path = "./bt-base" }
 dotenv = "0.15.0"
-chrono = "0.4.31"

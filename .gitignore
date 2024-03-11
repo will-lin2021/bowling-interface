@@ -5,11 +5,11 @@
 /target
 
 // Security reasons
-.env
+*.env
 /keys
 
 // Macbook
-/.DS_Store
+*.DS_Store
 
 // Others
 /misc

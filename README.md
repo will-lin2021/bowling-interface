@@ -16,6 +16,8 @@ Bowling Score Tracker is a CLI program written in Rust to enter, track, and calc
 ### Installing
 
 * Install [Rust/Cargo](https://rustup.rs) and [MongoDB](https://www.mongodb.com)
+* `git clone` repo into a 
+
 
 ```
 TODO: Sample install here...
