@@ -7,7 +7,7 @@ use std::{
     io::{stdout, Write},
 };
 
-use dotenv::dotenv;
+use dotenvy::dotenv;
 
 // TODO: Check out superconsole crate for a better interface for games?
 
@@ -18,7 +18,7 @@ use dotenv::dotenv;
 // [!!!] Crucial Error: Program Termination (used for severe internal errors)
 
 fn main() {
-    dotenv().ok();
+    dotenv().expect(".env not found");
 
     println!("Bowling Score Tracker");
 

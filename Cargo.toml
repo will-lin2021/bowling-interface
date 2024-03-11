@@ -10,4 +10,4 @@ members = [
 
 [dependencies]
 bt-base = { path = "./bt-base" }
-dotenv = "0.15.0"
+dotenvy = "0.15.7"

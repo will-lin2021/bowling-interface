@@ -1942,11 +1942,11 @@ mod db_conn_tests {
 
     use std::{collections::HashMap, env};
 
-    use dotenv::dotenv;
+    use dotenvy::dotenv;
 
     #[test]
     fn serial_tests() {
-        dotenv().ok();
+        dotenv().expect(".env not found");
 
         let mut conn_info: HashMap<&str, String> = HashMap::new();
 
