@@ -1,3 +1,3 @@
-pub mod db_conn;
+pub mod mongodb_conn;
 
-pub use db_conn::DatabaseConn;
+pub use mongodb_conn::DatabaseConn;
