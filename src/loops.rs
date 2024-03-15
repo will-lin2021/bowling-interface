@@ -1,3 +1,5 @@
+use crate::error::Error;
+
 use bt_base::{
     base::{Date, Frame, Game},
     util::helper::{get_user_input, parse_options, parse_scores},
@@ -5,115 +7,186 @@ use bt_base::{
 
 use std::io::{stdout, Write};
 
+const EMPTY_INPUT: &str = "No inputs entered";
+const INVALID_ENTRIES: &str = "Invalid entry";
+const INCORRECT_NUM_SCORES: &str = "Invalid number of scores";
+const INVALID_SCORES: &str = "Invalid score";
+
 pub fn new_game_loop(date: Date, game_num: u8) -> Option<Game> {
     println!("{}: Game {}", date, game_num);
 
-    let mut game = Game::build();
+    let mut new_game = Game::build();
 
-    let mut frame_no = 1;
-    let mut bonus = false;
-    while frame_no <= 10 {
-        println!("{}", game);
-        println!("Frame {:}", frame_no);
+    let mut curr_frame_num = 1;
+    let mut done = false;
 
-        let mut throws_left = 2;
+    'frame_loop: loop {
+        println!("{}", new_game);
 
-        let mut frame_scores: Vec<u8> = Vec::new();
-        while throws_left > 0 {
-            print!("[>] ");
-            stdout().flush().ok();
+        if done {
+            println!("Game Completed: Use `d` to save and exit game")
+        } else {
+            println!("Frame {:}", curr_frame_num);
+        }
 
-            let input = get_user_input();
+        print!("[>] ");
+        stdout().flush().ok();
 
-            let options = parse_options(&input);
-            if options.is_empty() {
-                eprintln!("[!] No inputs entered\n");
+        // Get user input
+        let user_input = get_user_input();
+
+        // Process user input for any menu options
+        let user_options = parse_options(&user_input);
+        let option = match user_options.get_opt() {
+            None => {
+                eprintln!("{}\n", Error::Info(EMPTY_INPUT.to_string()));
 
                 continue;
             }
+            Some(opt) => opt,
+        };
 
-            match options.get_opt() {
-                "quit" | "q" => {
-                    println!("Exiting New Game...");
+        // Check user option
+        match option {
+            "quit" | "q" => {
+                println!("Exiting...");
 
-                    return None;
-                }
-                "modify" | "m" => {
-                    let args = options.get_args();
-
-                    if args.len() != 1 {
-                        eprintln!("[!] Invalid number of arguments\n");
-
-                        continue;
-                    }
-
-                    let frame_num = match args[0].parse::<u8>() {
-                        Ok(num) => {
-                            if !(1..frame_no).contains(&num) {
-                                eprintln!(
-                                    "Invalid frame number: must be between 1 and {}\n",
-                                    frame_no - 1
-                                );
-
-                                continue;
-                            }
-
-                            num
-                        }
-                        Err(_) => {
-                            eprintln!("[!] Not a number\n");
-
-                            continue;
-                        }
-                    };
+                return None;
+            }
+            "done" | "d" => {
+                if !done {
+                    eprintln!("Game is not complete\n");
 
                     continue;
                 }
-                _ => (),
+
+                println!("Saving and exiting...");
+
+                return Some(new_game);
             }
+            "modify" | "m" => {
+                let args = user_options.get_args();
 
-            let input_scores: Vec<u8> = parse_scores(&input);
+                // Check the number of arguments
+                if !(3..=4).contains(&args.len()) {
+                    eprintln!(
+                        "{}\n",
+                        Error::Info("Usage: m <frame num> <t1> <t2> [t3 - opt]".to_string())
+                    );
 
-            if input_scores.is_empty() {
-                eprintln!("[!] Invalid scores entered\n");
+                    continue;
+                }
 
-                continue;
+                // Check frame number
+                let mod_frame_num = match args[0].parse::<u8>() {
+                    Ok(entered_frame_num) => {
+                        if !(1..curr_frame_num).contains(&entered_frame_num) {
+                            eprintln!(
+                                "{}\n",
+                                Error::Info(format!(
+                                    "Frame number must be between 1-{}",
+                                    curr_frame_num - 1
+                                ))
+                            );
+
+                            continue;
+                        }
+
+                        entered_frame_num
+                    }
+                    Err(_) => {
+                        eprintln!(
+                            "{}\n",
+                            Error::Info("Frame number must be a number".to_string())
+                        );
+
+                        continue;
+                    }
+                };
+
+                // Parse scores
+                let mod_scores = match parse_scores(&args[1..].join(" ")) {
+                    None => {
+                        eprintln!("{}\n", Error::Info(INVALID_ENTRIES.to_string()));
+
+                        continue;
+                    }
+                    Some(entered_scores) => entered_scores,
+                };
+
+                // Check number of scores entered
+                if (mod_frame_num < 10 && mod_scores.len() != 2)
+                    || (mod_frame_num == 10 && !(2..=3).contains(&mod_scores.len()))
+                {
+                    eprintln!("{}\n", Error::Info(INCORRECT_NUM_SCORES.to_string()));
+
+                    continue;
+                }
+
+                // Check frame validity
+                let mod_frame = Frame::from(mod_scores);
+                if !mod_frame.is_valid_no(mod_frame_num) {
+                    eprintln!("{}\n", Error::Info(INVALID_SCORES.to_string()));
+
+                    continue;
+                }
+
+                // Modify previous score
+                new_game.frames_mut()[(mod_frame_num - 1) as usize] = mod_frame;
+
+                println!();
+
+                continue 'frame_loop;
             }
-
-            let mut scores =
-                input_scores[0..std::cmp::min(input_scores.len(), throws_left)].to_vec();
-
-            if (frame_no != 10 && frame_scores.iter().sum::<u8>() + scores.iter().sum::<u8>() > 10)
-                || (frame_scores.iter().sum::<u8>() + scores.iter().sum::<u8>() > 30)
-            {
-                eprintln!("[!] Invalid scores entered\n");
-
-                continue;
-            }
-
-            throws_left -= scores.len();
-
-            frame_scores.append(&mut scores);
-
-            if frame_no != 10 && throws_left == 1 && frame_scores.iter().sum::<u8>() == 10 {
-                frame_scores.push(0);
-                throws_left = 0;
-            } else if frame_no == 10 && !bonus && frame_scores.iter().sum::<u8>() >= 10 {
-                throws_left += 1;
-                bonus = true
-            }
-
-            println!();
+            _ => (),
         }
 
-        game.frames_mut()[(frame_no - 1) as usize] = Frame::from(frame_scores);
+        if done {
+            println!("Game is finished.");
+            println!("Use `d` to save and exit game, or `q` to quit without saving game");
+            println!("`m` can also be used to modify and existing frame");
 
-        frame_no += 1;
+            continue;
+        }
+
+        // Parse scores
+        let frame_scores = match parse_scores(&user_input) {
+            None => {
+                eprintln!("{}\n", Error::Info(INVALID_ENTRIES.to_string()));
+
+                continue;
+            }
+            Some(scores) => scores,
+        };
+
+        // Check number of scores entered
+        if (curr_frame_num < 10 && frame_scores.len() != 2)
+            || (curr_frame_num == 10 && !(2..=3).contains(&frame_scores.len()))
+        {
+            eprintln!("{}\n", Error::Info(INCORRECT_NUM_SCORES.to_string()));
+
+            continue;
+        }
+
+        // Check frame validity
+        let new_frame = Frame::from(frame_scores);
+        if !new_frame.is_valid_no(curr_frame_num) {
+            eprintln!("{}\n", Error::Info(INVALID_SCORES.to_string()));
+
+            continue;
+        }
+
+        // Add to game
+        new_game.frames_mut()[(curr_frame_num - 1) as usize] = new_frame;
+
+        if curr_frame_num == 10 {
+            done = true;
+        }
+
+        curr_frame_num += 1;
+
+        println!();
     }
-
-    println!("{}", game);
-
-    Some(game)
 }
 
 pub fn mod_game_loop() {

@@ -245,6 +245,7 @@ impl std::convert::From<(u8, u8, u8)> for Frame {
 impl std::convert::From<Vec<u8>> for Frame {
     fn from(value: Vec<u8>) -> Self {
         match value.len() {
+            1 if value[0] == 10 => Self::TwoFrame(10, 0),
             2 => Self::TwoFrame(value[0], value[1]),
             3 => Self::ThreeFrame(value[0], value[1], value[2]),
             _ => Self::Uninit,
@@ -583,7 +584,9 @@ impl std::fmt::Display for Game {
                     }
                 }
                 Frame::TwoFrame(t1, t2) if t1 + t2 <= 10 => {
-                    if *t1 == 0 {
+                    if *t1 == 0 && *t2 == 0 {
+                        "- | -".to_string()
+                    } else if *t1 == 0 {
                         format!("- | {}", t2)
                     } else if *t2 == 0 {
                         format!("{} | -", t1)
@@ -625,7 +628,7 @@ impl std::fmt::Display for Game {
                     }
                 }
                 Frame::Uninit => "  |  ".to_string(),
-                _ => panic!(),
+                _ => unreachable!(),
             })
             .join(" | ");
 

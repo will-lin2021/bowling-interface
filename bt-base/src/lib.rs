@@ -7,10 +7,7 @@ pub mod prelude {
     pub use crate::{
         base::{Date, Frame, Game, Games},
         database::DatabaseConn,
-        util::{
-            error::Error,
-            helper::{get_user_input, parse_date, parse_options, parse_scores, MenuOption},
-        },
+        util::helper::{get_user_input, parse_date, parse_options, parse_scores, MenuOption},
     };
 }
 

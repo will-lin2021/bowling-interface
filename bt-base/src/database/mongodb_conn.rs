@@ -394,4 +394,8 @@ impl DatabaseConn {
 
         Ok(())
     }
+
+    pub fn validate(&self) -> bool {
+        todo!()
+    }
 }
