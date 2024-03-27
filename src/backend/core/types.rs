@@ -1,15 +1,9 @@
-// Standard Library
 use std::cmp::Ordering;
 
-// Other Libraries
+use chrono::{Datelike, Local, NaiveDate};
 use itertools::{izip, Itertools};
 use serde::{Deserialize, Serialize};
 
-use chrono::{Datelike, Local, NaiveDate};
-
-//
-// Date
-//
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Date {
     year: u16,
@@ -17,39 +11,6 @@ pub struct Date {
     day: u8,
 }
 
-//
-// Frame
-//
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub enum Frame {
-    #[default]
-    Uninit,
-    TwoFrame(u8, u8),
-    ThreeFrame(u8, u8, u8),
-}
-
-//
-// Game
-//
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Game {
-    game_num: u8,
-    frames: Box<[Frame]>,
-}
-
-//
-// Games
-//
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Games {
-    #[serde(rename = "_id")]
-    date: Date,
-    games: Vec<Game>,
-}
-
-//
-// Date impl
-//
 impl Date {
     // Constructor
     pub fn build() -> Self {
@@ -124,9 +85,14 @@ impl std::fmt::Display for Date {
     }
 }
 
-//
-// Frame impl
-//
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub enum Frame {
+    #[default]
+    Uninit,
+    TwoFrame(u8, u8),
+    ThreeFrame(u8, u8, u8),
+}
+
 impl Frame {
     // Constructor
     pub fn build() -> Self {
@@ -274,14 +240,17 @@ impl std::cmp::PartialOrd for Frame {
     }
 }
 
-//
-// Game impl
-//
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Game {
+    game_num: u8,
+    frames: Box<[Frame]>,
+}
+
 impl Game {
     // Constructor
-    pub fn build() -> Self {
+    pub fn build(num: u8) -> Self {
         Self {
-            game_num: 1,
+            game_num: num,
             frames: (1..=10)
                 .map(|_| Frame::Uninit)
                 .collect::<Vec<Frame>>()
@@ -387,7 +356,6 @@ impl Game {
     }
 
     pub fn score_n(&self, frame_no: u8) -> Option<u16> {
-        // TODO: fix...
         let iterator = izip!(
             (1..=10),
             self.frames.iter(),
@@ -656,9 +624,13 @@ impl std::fmt::Display for Game {
     }
 }
 
-//
-// Games impl
-//
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Games {
+    #[serde(rename = "_id")]
+    date: Date,
+    games: Vec<Game>,
+}
+
 impl Games {
     // Constructor
     pub fn build() -> Self {

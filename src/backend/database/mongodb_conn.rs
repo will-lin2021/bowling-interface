@@ -1,12 +1,10 @@
-use crate::{
-    base::{Date, Game, Games},
-    util::error::Error,
-};
-
 use mongodb::{
     bson::{doc, to_bson},
     sync::{Client, Collection, Database},
 };
+
+use crate::backend::core::types::{Date, Game, Games};
+use crate::error::CoreError as Error; // TODO: Should I keep this alias?
 
 pub struct DatabaseConn {
     client: Client,

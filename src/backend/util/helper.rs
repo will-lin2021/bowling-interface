@@ -1,8 +1,8 @@
-use crate::base::Date;
-
 use std::io::stdin;
 
 use chrono::NaiveDate;
+
+use crate::backend::core::types::Date;
 
 #[derive(Debug)]
 pub struct MenuOption {
@@ -11,10 +11,6 @@ pub struct MenuOption {
 }
 
 impl MenuOption {
-    pub fn is_empty(&self) -> bool {
-        self.option.is_none()
-    }
-
     pub fn get_opt(&self) -> Option<&str> {
         self.option.as_deref()
     }
