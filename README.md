@@ -1,6 +1,7 @@
 # Bowling Score Tracker
 
-**This is an old version of the bowling tracker, check the new version at [will-lin2021/bowling-tracker-app](https://github.com/will-lin2021/bowling-tracker-app)**
+> [!WARNING]
+> **This is an old version of the bowling tracker, check the new version at [will-lin2021/bowling-tracker-app](https://github.com/will-lin2021/bowling-tracker-app)**
 
 CLI bowling score tracker for tracking bowling scores over time
 
